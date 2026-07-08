@@ -3,42 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>VULTURE RUN</title>
-    <!-- Procedural Favicon Generator -->
-    <script>
-        (function() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 32;
-            canvas.height = 32;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#00ffcc';
-            ctx.beginPath();
-            ctx.moveTo(16, 4);
-            ctx.lineTo(28, 24);
-            ctx.lineTo(16, 18);
-            ctx.lineTo(4, 24);
-            ctx.closePath();
-            ctx.fill();
-            const link = document.createElement('link');
-            link.rel = 'icon';
-            link.href = canvas.toDataURL();
-            document.head.appendChild(link);
-        })();
-    </script>
-    <!-- Three.js and GLTFLoader -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <title>VULTURE RUN - Environment Inspector</title>
     <style>
-        :root {
-            --neon-blue: #00f0ff;
-            --neon-pink: #ff007f;
-            --dark-bg: #0a0a12;
-            --light-bg: #f0f0f8;
-            --panel-dark: rgba(10, 10, 18, 0.85);
-            --panel-light: rgba(240, 240, 248, 0.85);
-            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
         * {
             box-sizing: border-box;
             margin: 0;
@@ -46,16 +12,13 @@
             user-select: none;
             -webkit-user-select: none;
         }
-
         body, html {
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: var(--dark-bg);
-            font-family: var(--font-family);
-            color: #fff;
+            background-color: #0c0c14;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-
         #canvas-container {
             width: 100%;
             height: 100%;
@@ -64,925 +27,457 @@
             left: 0;
             z-index: 1;
         }
-
-        /* Loading Screen Overlay */
+        /* Loading Overlay with Blurred Background Image */
         #loader-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(circle, #1a1a2e 0%, #0a0a12 100%);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 1s ease-in-out, visibility 1s;
+            background-color: #0c0c14;
+        }
+        #loader-bg {
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            width: calc(100% + 40px);
+            height: calc(100% + 40px);
+            background-image: url('Gemini_Generated_Image_qad2wkqad2wkqad2.png');
             background-size: cover;
             background-position: center;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            transition: opacity 0.8s ease;
+            filter: blur(15px) brightness(0.4);
+            z-index: 1;
         }
-
-        .loader-content {
+        #loader-content {
+            position: relative;
+            z-index: 2;
             text-align: center;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 40px;
-            border-radius: 16px;
-            border: 1px solid var(--neon-blue);
-            box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
-            max-width: 500px;
-            width: 90%;
-        }
-
-        h1.game-title {
-            font-size: 3rem;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            margin-bottom: 10px;
-            background: linear-gradient(45deg, var(--neon-blue), var(--neon-pink));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
-        }
-
-        .loader-status {
-            margin: 20px 0;
-            font-size: 1.1rem;
-            color: #a0a0b0;
-        }
-
-        .progress-bar-container {
-            width: 100%;
-            height: 8px;
-            background: #222;
-            border-radius: 4px;
-            overflow: hidden;
-            margin-bottom: 25px;
-        }
-
-        .progress-bar {
-            width: 0%;
-            height: 100%;
-            background: linear-gradient(90deg, var(--neon-blue), var(--neon-pink));
-            box-shadow: 0 0 10px var(--neon-blue);
-            transition: width 0.3s ease;
-        }
-
-        .btn-start {
-            padding: 12px 35px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            text-transform: uppercase;
-            border: none;
-            border-radius: 30px;
-            background: linear-gradient(90deg, var(--neon-blue), var(--neon-pink));
-            color: white;
-            cursor: pointer;
-            box-shadow: 0 0 15px rgba(255, 0, 127, 0.4);
-            transition: transform 0.2s, box-shadow 0.2s;
-            display: none;
-        }
-
-        .btn-start:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 25px rgba(0, 240, 255, 0.8);
-        }
-
-        /* Head-Up Display (HUD) */
-        #hud {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 10;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            color: #ffffff;
             padding: 20px;
-            box-sizing: border-box;
         }
-
-        .interactive {
-            pointer-events: auto;
-        }
-
-        .hud-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-        }
-
-        .hud-panel {
-            background: var(--panel-dark);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 12px 20px;
-            border-radius: 12px;
-            backdrop-filter: blur(8px);
-            transition: all 0.3s ease;
-        }
-
-        /* Light Mode UI Adjustments */
-        body.light-mode .hud-panel {
-            background: var(--panel-light);
-            color: #111;
-            border: 1px solid rgba(0, 0, 0, 0.1);
-        }
-
-        .speedometer {
-            font-size: 2rem;
+        h1 {
+            font-size: 3rem;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(0, 255, 242, 0.6);
             font-weight: 900;
-            font-family: monospace;
-            color: var(--neon-blue);
-            text-shadow: 0 0 5px rgba(0, 240, 255, 0.5);
+            animation: pulse 2s infinite alternate;
         }
-
-        .controls-panel {
-            display: flex;
-            gap: 10px;
+        p {
+            font-size: 1rem;
+            letter-spacing: 3px;
+            color: #8a99ad;
+            margin-bottom: 30px;
+            text-transform: uppercase;
         }
-
-        .hud-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.2s ease;
-            font-size: 0.9rem;
+        .spinner-container {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px auto;
         }
-
-        body.light-mode .hud-btn {
-            background: rgba(0, 0, 0, 0.05);
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            color: #111;
+        .spinner {
+            width: 100%;
+            height: 100%;
+            border: 4px solid rgba(0, 255, 242, 0.1);
+            border-top-color: #00fff2;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
         }
-
-        .hud-btn:hover {
-            background: var(--neon-blue);
-            color: black;
-            border-color: var(--neon-blue);
-            box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
-        }
-
-        .hud-bottom {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-        }
-
-        /* Instructions & Language Mapping */
-        .instructions-card {
-            max-width: 320px;
-            font-size: 0.85rem;
-            line-height: 1.4;
-        }
-
-        .instructions-card h3 {
-            margin-bottom: 5px;
-            color: var(--neon-pink);
-        }
-
-        /* Mobile Controls */
-        #mobile-controls {
-            display: none;
-            gap: 15px;
-            pointer-events: auto;
-        }
-
-        .touch-btn {
+        .spinner-inner {
+            position: absolute;
+            top: 10px;
+            left: 10px;
             width: 60px;
             height: 60px;
-            background: rgba(255, 255, 255, 0.15);
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            border: 4px solid rgba(255, 0, 128, 0.1);
+            border-bottom-color: #ff0080;
             border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            font-weight: bold;
-            font-size: 1.2rem;
-            touch-action: none;
+            animation: spin-reverse 1.5s linear infinite;
         }
-
-        .touch-btn:active {
-            background: var(--neon-blue);
-            color: black;
-            transform: scale(0.9);
+        #status-text {
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #00fff2;
+            text-shadow: 0 0 10px rgba(0, 255, 242, 0.4);
         }
-
-        /* Streaming Notification Toast */
-        #stream-toast {
+        /* UI Overlay for controls info */
+        #ui-panel {
             position: absolute;
-            bottom: 100px;
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 240, 255, 0.2);
-            border: 1px solid var(--neon-blue);
-            padding: 10px 20px;
-            border-radius: 20px;
-            backdrop-filter: blur(5px);
-            font-weight: bold;
-            color: #fff;
-            z-index: 15;
+            z-index: 5;
+            background: rgba(12, 12, 20, 0.85);
+            border: 1px solid rgba(0, 255, 242, 0.2);
+            padding: 15px 30px;
+            border-radius: 30px;
+            color: #ffffff;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
             pointer-events: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 15px rgba(0, 255, 242, 0.1);
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            transition: opacity 0.5s ease;
             opacity: 0;
-            transition: opacity 0.4s ease, transform 0.4s ease;
         }
-
-        #stream-toast.show {
-            opacity: 1;
-            transform: translate(-50%, -10px);
+        .ui-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-
-        @media (max-width: 768px) {
-            #mobile-controls {
-                display: flex;
-            }
-            .instructions-card {
-                display: none;
-            }
+        .ui-icon {
+            width: 8px;
+            height: 8px;
+            background-color: #ff0080;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #ff0080;
         }
-
-        /* RTL support styling helper */
-        .rtl {
-            direction: rtl;
-            text-align: right;
+        .ui-icon.cyan {
+            background-color: #00fff2;
+            box-shadow: 0 0 8px #00fff2;
+        }
+        #fallback-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 5;
+            background: rgba(255, 0, 80, 0.2);
+            border: 1px solid #ff0050;
+            color: #ff0050;
+            padding: 8px 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border-radius: 4px;
+            display: none;
+            box-shadow: 0 0 15px rgba(255, 0, 80, 0.3);
+            animation: blink 2s infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        @keyframes spin-reverse {
+            to { transform: rotate(-360deg); }
+        }
+        @keyframes pulse {
+            from { transform: scale(0.98); text-shadow: 0 0 15px rgba(0, 255, 242, 0.5); }
+            to { transform: scale(1.02); text-shadow: 0 0 30px rgba(0, 255, 242, 0.8), 0 0 10px rgba(255, 0, 128, 0.6); }
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
     </style>
 </head>
 <body>
 
+    <div id="loader-overlay">
+        <div id="loader-bg"></div>
+        <div id="loader-content">
+            <h1>VULTURE RUN</h1>
+            <p>Environment Compiler Phase</p>
+            <div class="spinner-container">
+                <div class="spinner"></div>
+                <div class="spinner-inner"></div>
+            </div>
+            <div id="status-text">Initializing Engine...</div>
+        </div>
+    </div>
+
+    <div id="fallback-badge">Fallback Grid Active</div>
+
+    <div id="ui-panel">
+        <div class="ui-item"><span class="ui-icon"></span>Drag to Rotate</div>
+        <div class="ui-item"><span class="ui-icon cyan"></span>Scroll to Zoom</div>
+        <div class="ui-item"><span class="ui-icon"></span>Right-Click to Pan</div>
+    </div>
+
     <div id="canvas-container"></div>
 
-    <!-- Loading Screen Overlay -->
-    <div id="loader-overlay">
-        <div class="loader-content">
-            <h1 class="game-title" id="title-text">VULTURE RUN</h1>
-            <p class="loader-status" id="status-text">Initializing Engine...</p>
-            <div class="progress-bar-container">
-                <div class="progress-bar" id="progress-bar"></div>
-            </div>
-            <button class="btn-start" id="btn-start">Start Race</button>
-        </div>
-    </div>
-
-    <!-- HUD -->
-    <div id="hud">
-        <div class="hud-top">
-            <div class="hud-panel speedometer">
-                <span id="speed-val">0</span> <span style="font-size: 1rem; font-weight: normal;">KM/H</span>
-            </div>
-            <div class="controls-panel interactive">
-                <button class="hud-btn" id="btn-lang" onclick="toggleLanguage()">العربية</button>
-                <button class="hud-btn" id="btn-theme" onclick="toggleTheme()">Dark Mode</button>
-                <button class="hud-btn" id="btn-map" onclick="toggleMap()">Map: Procedural</button>
-            </div>
-        </div>
-
-        <div id="stream-toast">Streaming Terrain Assets...</div>
-
-        <div class="hud-bottom">
-            <div class="hud-panel instructions-card interactive" id="instructions-panel">
-                <h3 id="instr-title">CONTROLS</h3>
-                <p id="instr-body">W, A, S, D / Arrow Keys to Drive.<br>Spacebar to Drift / Brake.<br>R to Reset Vehicle.</p>
-            </div>
-
-            <!-- Mobile Controls -->
-            <div id="mobile-controls">
-                <div class="touch-btn" id="btn-left">←</div>
-                <div style="display:flex; flex-direction:column; gap:10px;">
-                    <div class="touch-btn" id="btn-up">↑</div>
-                    <div class="touch-btn" id="btn-down">↓</div>
-                </div>
-                <div class="touch-btn" id="btn-right">→</div>
-            </div>
-        </div>
-    </div>
+    <!-- Include Three.js and dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
     <script>
-        // --- CONFIGURATION & CONSTANTS ---
-        const ASSETS = {
-            bg: 'Gemini_Generated_Image_qad2wkqad2wkqad2.png',
-            car: 'lowpoly_race_car.glb',
-            map1: 'highway_lnterchange_overpass.glb',
-            map2: 'farmland_and_terraced_fields_beside_the_highway.glb'
-        };
+        // --- Application Architecture & Pipeline ---
+        let scene, camera, renderer, controls;
+        let mainModel = null;
+        let isFallbackActive = false;
+        
+        const container = document.getElementById('canvas-container');
+        const loaderOverlay = document.getElementById('loader-overlay');
+        const statusText = document.getElementById('status-text');
+        const uiPanel = document.getElementById('ui-panel');
+        const fallbackBadge = document.getElementById('fallback-badge');
 
-        const CACHE_NAME = 'vulture-run-assets-v1';
-
-        // Translation Dictionary
-        const TRANSLATIONS = {
-            en: {
-                title: "VULTURE RUN",
-                init: "Initializing Engine...",
-                caching: "Configuring high-performance cache storage...",
-                loadingCar: "Preloading Vulture Race Vehicle...",
-                ready: "Ready to Race!",
-                start: "Start Race",
-                speed: "KM/H",
-                dark: "Dark Studio",
-                light: "Light Studio",
-                mapProcedural: "Map: Procedural Neon",
-                map1: "Map: Highway Interchange",
-                map2: "Map: Terraced Farmland",
-                instrTitle: "CONTROLS",
-                instrBody: "W, A, S, D / Arrow Keys to Drive.<br>Spacebar to Drift / Brake.<br>R to Reset Vehicle.",
-                streaming: "Streaming High-Fidelity Terrain...",
-                streamDone: "Terrain Assets Compiled & Swapped Successfully!",
-                loadingMap2: "Streaming Map 2 from CDN..."
-            },
-            ar: {
-                title: "فولتشر ران",
-                init: "جاري تهيئة المحرك...",
-                caching: "إعداد ذاكرة التخزين المؤقت فائقة السرعة...",
-                loadingCar: "تحميل مركبة السباق فولتشر...",
-                ready: "جاهز للانطلاق!",
-                start: "ابدأ السباق",
-                speed: "كم/س",
-                dark: "نمط الاستوديو المظلم",
-                light: "نمط الاستوديو المضيء",
-                mapProcedural: "الخريطة: نيون إجرائي",
-                map1: "الخريطة: تقاطع الطرق السريعة",
-                map2: "الخريطة: الحقول المدرجة",
-                instrTitle: "عناصر التحكم",
-                instrBody: "W, A, S, D أو الأسهم للتوجيه.<br>المسافة للتفحيط / الكبح.<br>R لإعادة تعيين المركبة.",
-                streaming: "جاري بث تضاريس الخريطة...",
-                streamDone: "تم دمج وبث أصول الخريطة بنجاح!",
-                loadingMap2: "جاري تحميل الخريطة الثانية..."
-            }
-        };
-
-        let currentLang = 'en';
-        let currentTheme = 'dark';
-        let activeMapType = 'procedural'; // 'procedural', 'map1', 'map2'
-
-        // --- CACHE ENGINE (Local Storage & Cache Storage API Integration) ---
-        async function getCachedAssetURL(url) {
-            if (!('caches' in window)) return url;
-            try {
-                const cache = await caches.open(CACHE_NAME);
-                const cachedResponse = await cache.match(url);
-                if (cachedResponse) {
-                    const blob = await cachedResponse.blob();
-                    return URL.createObjectURL(blob);
-                }
-                // Fetch and cache asynchronously
-                const response = await fetch(url);
-                if (response.ok) {
-                    await cache.put(url, response.clone());
-                    const blob = await response.blob();
-                    return URL.createObjectURL(blob);
-                }
-            } catch (err) {
-                console.warn("Caching Engine bypassed:", err);
-            }
-            return url;
-        }
-
-        // --- GAME ENGINE ARCHITECTURE ---
-        let scene, camera, renderer, clock;
-        let car, carPhysics = {
-            position: new THREE.Vector3(0, 0.5, 0),
-            velocity: new THREE.Vector3(),
-            acceleration: 0.18,
-            friction: 0.96,
-            maxSpeed: 1.8,
-            steerAngle: 0,
-            maxSteer: 0.045,
-            yaw: Math.PI // Start facing away from screen (into -Z depth)
-        };
-
-        let keys = { w: false, a: false, s: false, d: false, space: false };
-        let proceduralTrack, streamedMapMesh = null;
-        let ambientLight, dirLight;
-
-        // --- INITIALIZATION PIPELINE ---
-        window.addEventListener('load', async () => {
-            initUI();
-            await setupCacheAndPreload();
-        });
-
-        function initUI() {
-            // Apply background image to loader instantly
-            document.getElementById('loader-overlay').style.backgroundImage = `url('${ASSETS.bg}')`;
-        }
-
-        function updateUILanguage() {
-            const t = TRANSLATIONS[currentLang];
-            document.getElementById('title-text').innerText = t.title;
-            document.getElementById('btn-start').innerText = t.start;
-            document.getElementById('instr-title').innerText = t.instrTitle;
-            document.getElementById('instr-body').innerHTML = t.instrBody;
-            document.getElementById('btn-lang').innerText = currentLang === 'en' ? 'العربية' : 'English';
-            
-            // Map button update
-            const mapBtn = document.getElementById('btn-map');
-            if (activeMapType === 'procedural') mapBtn.innerText = t.mapProcedural;
-            else if (activeMapType === 'map1') mapBtn.innerText = t.map1;
-            else if (activeMapType === 'map2') mapBtn.innerText = t.map2;
-
-            // Theme button update
-            document.getElementById('btn-theme').innerText = currentTheme === 'dark' ? t.dark : t.light;
-
-            // RTL adjustments
-            const instrPanel = document.getElementById('instructions-panel');
-            if (currentLang === 'ar') {
-                instrPanel.classList.add('rtl');
-            } else {
-                instrPanel.classList.remove('rtl');
-            }
-        }
-
-        function toggleLanguage() {
-            currentLang = currentLang === 'en' ? 'ar' : 'en';
-            updateUILanguage();
-        }
-
-        // --- PRELOAD & STREAMING ENGINE ---
-        async function setupCacheAndPreload() {
-            const bar = document.getElementById('progress-bar');
-            const status = document.getElementById('status-text');
-            const t = TRANSLATIONS[currentLang];
-
-            status.innerText = t.caching;
-            bar.style.width = '20%';
-
-            // Cache critical minimal assets
-            try {
-                const cachedCarURL = await getCachedAssetURL(ASSETS.car);
-                bar.style.width = '50%';
-                status.innerText = t.loadingCar;
-
-                // Fire up Three.js Engine Context
-                initEngine();
-
-                // Load Player Vehicle
-                const loader = new THREE.GLTFLoader();
-                loader.load(cachedCarURL, (gltf) => {
-                    car = gltf.scene;
-                    
-                    // ORIENTATION CORRECTION: Fix inverted mesh bug
-                    // Programmatically rotate the model by 180 degrees to align forward nose vector with deep scene -Z axis.
-                    car.rotation.y = Math.PI; 
-                    
-                    // Optimize shadow maps on car
-                    car.traverse(child => {
-                        if (child.isMesh) {
-                            child.castShadow = true;
-                            child.receiveShadow = true;
-                        }
-                    });
-
-                    scene.add(car);
-                    
-                    bar.style.width = '100%';
-                    status.innerText = t.ready;
-                    document.getElementById('btn-start').style.display = 'inline-block';
-                }, undefined, (error) => {
-                    console.warn("Failed loading car GLB, creating procedural vehicle proxy...", error);
-                    createProceduralCar();
-                    bar.style.width = '100%';
-                    status.innerText = t.ready;
-                    document.getElementById('btn-start').style.display = 'inline-block';
-                });
-
-            } catch (err) {
-                console.error("Pipeline failure: ", err);
-                // Fail-safe fallback to start game
-                initEngine();
-                createProceduralCar();
-                bar.style.width = '100%';
-                status.innerText = t.ready;
-                document.getElementById('btn-start').style.display = 'inline-block';
-            }
-        }
-
-        // --- ENGINE SETUP ---
-        function initEngine() {
-            const container = document.getElementById('canvas-container');
-            
+        function init() {
+            // 1. Scene Setup
             scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x0a0a12, 0.007);
+            scene.background = new THREE.Color(0x0c0c14);
+            scene.fog = new THREE.FogExp2(0x0c0c14, 0.002);
 
+            // 2. Camera Setup
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
-            
+            camera.position.set(0, 50, 100);
+
+            // 3. Renderer Setup
             renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            renderer.toneMappingExposure = 1.0;
+            renderer.toneMappingExposure = 1.2;
             container.appendChild(renderer.domElement);
 
-            clock = new THREE.Clock();
+            // 4. Orbit Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.screenSpacePanning = true;
+            controls.maxPolarAngle = Math.PI / 2 - 0.02; // Don't go below ground
+            controls.minDistance = 2;
+            controls.maxDistance = 800;
 
-            // Lighting Setup
-            ambientLight = new THREE.AmbientLight(0xffffff, 0.15);
-            scene.add(ambientLight);
+            // 5. Lighting Setup
+            setupLighting();
 
-            dirLight = new THREE.DirectionalLight(0x00f0ff, 1.5);
-            dirLight.position.set(100, 150, 50);
-            dirLight.castShadow = true;
-            dirLight.shadow.mapSize.width = 2048;
-            dirLight.shadow.mapSize.height = 2048;
-            dirLight.shadow.camera.near = 0.5;
-            dirLight.shadow.camera.far = 500;
-            const d = 100;
-            dirLight.shadow.camera.left = -d;
-            dirLight.shadow.camera.right = d;
-            dirLight.shadow.camera.top = d;
-            dirLight.shadow.camera.bottom = -d;
-            scene.add(dirLight);
-
-            // Procedural Grid & Highway Fallback (Instant Start)
-            buildProceduralTrack();
-
-            // Event Listeners
+            // 6. Handle Resize
             window.addEventListener('resize', onWindowResize);
-            setupInputHandlers();
 
-            // Start Game Loop
+            // 7. Load Asset
+            loadEnvironment();
+
+            // 8. Start Loop
             animate();
         }
 
-        function createProceduralCar() {
-            const carGroup = new THREE.Group();
-            const bodyGeo = new THREE.BoxGeometry(1.6, 0.6, 3.5);
-            const bodyMat = new THREE.MeshStandardMaterial({ color: 0xff0055, roughness: 0.2 });
-            const body = new THREE.Mesh(bodyGeo, bodyMat);
-            body.position.y = 0.3;
-            carGroup.add(body);
+        function setupLighting() {
+            // Ambient Light: High intensity to bring out dark textures and photogrammetry details
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1.8);
+            scene.add(ambientLight);
 
-            const cabinGeo = new THREE.BoxGeometry(1.2, 0.5, 1.8);
-            const cabinMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.9, roughness: 0.1 });
-            const cabin = new THREE.Mesh(cabinGeo, cabinMat);
-            cabin.position.set(0, 0.8, -0.2);
-            carGroup.add(cabin);
+            // Hemisphere Light for sky/ground gradients
+            const hemiLight = new THREE.HemisphereLight(0x3a4f7c, 0x121224, 1.0);
+            scene.add(hemiLight);
 
-            car = carGroup;
-            scene.add(car);
-        }
+            // Directional Light 1: Primary Key Light
+            const dirLight1 = new THREE.DirectionalLight(0x00fff2, 2.5);
+            dirLight1.position.set(150, 200, 100);
+            dirLight1.castShadow = true;
+            dirLight1.shadow.mapSize.width = 2048;
+            dirLight1.shadow.mapSize.height = 2048;
+            dirLight1.shadow.camera.near = 0.5;
+            dirLight1.shadow.camera.far = 1000;
+            const d = 300;
+            dirLight1.shadow.camera.left = -d;
+            dirLight1.shadow.camera.right = d;
+            dirLight1.shadow.camera.top = d;
+            dirLight1.shadow.camera.bottom = -d;
+            scene.add(dirLight1);
 
-        // --- PROCEDURAL TRACK DESIGN (IMMEDIATE RACING GRID) ---
-        function buildProceduralTrack() {
-            proceduralTrack = new THREE.Group();
+            // Directional Light 2: Opposing Fill Light
+            const dirLight2 = new THREE.DirectionalLight(0xff0080, 2.0);
+            dirLight2.position.set(-150, 150, -100);
+            dirLight2.castShadow = true;
+            scene.add(dirLight2);
 
-            // Infinite Grid Floor
-            const gridHelper = new THREE.GridHelper(3000, 150, 0xff007f, 0x00f0ff);
-            gridHelper.position.y = -0.05;
-            proceduralTrack.add(gridHelper);
-
-            // Glowing Track Borders (Neon Highway Path)
-            const trackWidth = 40;
-            const trackLength = 4000;
-            const borderGeo = new THREE.BoxGeometry(1, 0.4, trackLength);
-            const borderMatLeft = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
-            const borderMatRight = new THREE.MeshBasicMaterial({ color: 0xff007f });
-
-            const leftBorder = new THREE.Mesh(borderGeo, borderMatLeft);
-            leftBorder.position.set(-trackWidth/2, 0.2, -trackLength/2 + 500);
-            proceduralTrack.add(leftBorder);
-
-            const rightBorder = new THREE.Mesh(borderGeo, borderMatRight);
-            rightBorder.position.set(trackWidth/2, 0.2, -trackLength/2 + 500);
-            proceduralTrack.add(rightBorder);
-
-            scene.add(proceduralTrack);
-        }
-
-        // --- CORE GAME LOOP & PHYSICS REALIGNMENT ---
-        function animate() {
-            requestAnimationFrame(animate);
-
-            const delta = clock.getDelta();
-
-            if (car) {
-                updatePhysics(delta);
-                updateCamera();
+            // Subtle neon point lights to add atmosphere
+            const colors = [0x00fff2, 0xff0080, 0x00ff66];
+            for(let i=0; i<3; i++) {
+                const pl = new THREE.PointLight(colors[i], 3, 100);
+                pl.position.set((i-1)*100, 20, (i-1)*50);
+                scene.add(pl);
             }
-
-            renderer.render(scene, camera);
         }
 
-        function updatePhysics(delta) {
-            // Steering Calculations
-            if (keys.a) {
-                carPhysics.steerAngle = Math.min(carPhysics.steerAngle + 0.008, carPhysics.maxSteer);
-            } else if (keys.d) {
-                carPhysics.steerAngle = Math.max(carPhysics.steerAngle - 0.008, -carPhysics.maxSteer);
-            } else {
-                carPhysics.steerAngle *= 0.8; // Return to center
-            }
-
-            // Acceleration & Braking (W/S)
-            let currentAcc = 0;
-            if (keys.w) {
-                currentAcc = carPhysics.acceleration;
-            } else if (keys.s) {
-                currentAcc = -carPhysics.acceleration * 0.6;
-            }
-
-            // Apply Spacebar Drift / Handbrake
-            if (keys.space) {
-                carPhysics.friction = 0.92;
-                carPhysics.steerAngle *= 1.2; // Extra rotation slippage
-            } else {
-                carPhysics.friction = 0.96;
-            }
-
-            // Update Velocity
-            carPhysics.velocity.z += Math.cos(carPhysics.yaw) * currentAcc;
-            carPhysics.velocity.x += Math.sin(carPhysics.yaw) * currentAcc;
-
-            // Apply Friction
-            carPhysics.velocity.multiplyScalar(carPhysics.friction);
-
-            // Speed Limit
-            const currentSpeed = carPhysics.velocity.length();
-            if (currentSpeed > carPhysics.maxSpeed) {
-                carPhysics.velocity.setLength(carPhysics.maxSpeed);
-            }
-
-            // Update Orientation (Yaw Angle) based on velocity & steer direction
-            if (currentSpeed > 0.05) {
-                const speedFactor = Math.min(currentSpeed / carPhysics.maxSpeed, 1.0);
-                const directionalSign = keys.s ? -1 : 1;
-                carPhysics.yaw += carPhysics.steerAngle * speedFactor * directionalSign;
-            }
-
-            // Update Position Vector
-            carPhysics.position.add(carPhysics.velocity);
-
-            // Apply to 3D Transform
-            car.position.copy(carPhysics.position);
-            car.rotation.y = carPhysics.yaw;
-
-            // Wheels / Body roll visual feedback (subtle tilt)
-            car.rotation.z = -carPhysics.steerAngle * (currentSpeed / carPhysics.maxSpeed) * 0.5;
-
-            // Update HUD Speedometer
-            const speedKmh = Math.round(currentSpeed * 120);
-            document.getElementById('speed-val').innerText = speedKmh;
-        }
-
-        // --- CHASE CAMERA TRACKING RIG ---
-        // Anchors rigidly and smoothly behind the corrected forward direction of the vehicle.
-        function updateCamera() {
-            // Target offset behind the car (relative to its yaw orientation)
-            const backDist = 12;
-            const height = 4.5;
-            
-            const offset = new THREE.Vector3(
-                Math.sin(carPhysics.yaw) * -backDist,
-                height,
-                Math.cos(carPhysics.yaw) * -backDist
-            );
-
-            const targetCamPos = carPhysics.position.clone().add(offset);
-            
-            // Smoothly damp camera position
-            camera.position.lerp(targetCamPos, 0.12);
-
-            // Look at a point slightly in front of the car
-            const lookOffset = new THREE.Vector3(
-                Math.sin(carPhysics.yaw) * 15,
-                1.5,
-                Math.cos(carPhysics.yaw) * 15
-            );
-            const lookTarget = carPhysics.position.clone().add(lookOffset);
-            camera.lookAt(lookTarget);
-        }
-
-        // --- INPUT HANDLING (KEYBOARD & TOUCH) ---
-        function setupInputHandlers() {
-            // Keyboard
-            window.addEventListener('keydown', (e) => {
-                switch(e.key.toLowerCase()) {
-                    case 'w': case 'arrowup': keys.w = true; break;
-                    case 's': case 'arrowdown': keys.s = true; break;
-                    case 'a': case 'arrowleft': keys.a = true; break;
-                    case 'd': case 'arrowright': keys.d = true; break;
-                    case ' ': keys.space = true; break;
-                    case 'r': resetVehicle(); break;
-                }
-            });
-
-            window.addEventListener('keyup', (e) => {
-                switch(e.key.toLowerCase()) {
-                    case 'w': case 'arrowup': keys.w = false; break;
-                    case 's': case 'arrowdown': keys.s = false; break;
-                    case 'a': case 'arrowleft': keys.a = false; break;
-                    case 'd': case 'arrowright': keys.d = false; break;
-                    case ' ': keys.space = false; break;
-                }
-            });
-
-            // Mobile Touch Buttons
-            const registerTouchBtn = (id, keyName) => {
-                const btn = document.getElementById(id);
-                btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[keyName] = true; });
-                btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[keyName] = false; });
-            };
-
-            registerTouchBtn('btn-up', 'w');
-            registerTouchBtn('btn-down', 's');
-            registerTouchBtn('btn-left', 'a');
-            registerTouchBtn('btn-right', 'd');
-        }
-
-        function resetVehicle() {
-            carPhysics.position.set(0, 0.5, 0);
-            carPhysics.velocity.set(0, 0, 0);
-            carPhysics.yaw = Math.PI;
-            carPhysics.steerAngle = 0;
-        }
-
-        // --- PROGRESSIVE ASSET STREAMING PIPELINE ---
-        let map1Loaded = false;
-        let map2Loaded = false;
-        let map1Mesh = null;
-        let map2Mesh = null;
-
-        async function streamMapAsset(url, callback) {
-            showToast(TRANSLATIONS[currentLang].streaming);
-            const localURL = await getCachedAssetURL(url);
-            
+        function loadEnvironment() {
+            statusText.textContent = "Loading highway_lnterchange_overpass.glb...";
             const loader = new THREE.GLTFLoader();
-            loader.load(localURL, (gltf) => {
-                const model = gltf.scene;
-                
-                // Optimize materials for real-time performance & prepare for transition fade
-                model.traverse(child => {
-                    if (child.isMesh) {
-                        child.receiveShadow = true;
-                        child.castShadow = true;
-                        if (child.material) {
-                            child.material.transparent = true;
-                            child.material.opacity = 0; // Start invisible for fade-in transition
-                        }
-                    }
-                });
 
-                callback(model);
-                showToast(TRANSLATIONS[currentLang].streamDone);
+            loader.load(
+                'highway_lnterchange_overpass.glb',
+                // Success Callback
+                function (gltf) {
+                    mainModel = gltf.scene;
+                    
+                    // Optimize and enable shadows for loaded model
+                    mainModel.traverse((child) => {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                            
+                            // Enhance materials if they exist
+                            if(child.material) {
+                                child.material.roughness = Math.max(child.material.roughness, 0.4);
+                                child.material.metalness = Math.min(child.material.metalness, 0.8);
+                            }
+                        }
+                    });
+
+                    scene.add(mainModel);
+                    
+                    // Frame the model perfectly in viewport
+                    focusCameraOnModel(mainModel);
+                    
+                    hideLoader();
+                },
+                // Progress Callback
+                function (xhr) {
+                    if (xhr.total > 0) {
+                        const percent = Math.round((xhr.loaded / xhr.total) * 100);
+                        statusText.textContent = `Downloading environment: ${percent}%`;
+                    }
+                },
+                // Error Callback
+                function (error) {
+                    console.warn("Primary GLTF asset failed to load. Initializing beautiful fallback cyber-grid...", error);
+                    statusText.textContent = "Error loading primary asset. Initializing Cyber-Grid fallback...";
+                    setTimeout(activateFallbackEnvironment, 1000);
+                }
+            );
+        }
+
+        function focusCameraOnModel(model) {
+            const box = new THREE.Box3().setFromObject(model);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const fov = camera.fov * (Math.PI / 180);
+            let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+            
+            // Offset camera slightly for dynamic view
+            camera.position.set(center.x + maxDim * 0.7, center.y + maxDim * 0.4, center.z + maxDim * 0.7);
+            camera.lookAt(center);
+            
+            controls.target.copy(center);
+            controls.maxDistance = maxDim * 4;
+            controls.update();
+        }
+
+        function activateFallbackEnvironment() {
+            isFallbackActive = true;
+            fallbackBadge.style.display = "block";
+
+            // Create Infinite Neon Cyber-Grid
+            const gridHelper = new THREE.GridHelper(1000, 100, 0xff0080, 0x00fff2);
+            gridHelper.position.y = -0.5;
+            scene.add(gridHelper);
+
+            // Create a custom glowing road bed
+            const roadGeo = new THREE.PlaneGeometry(60, 1000);
+            const roadMat = new THREE.MeshStandardMaterial({
+                color: 0x05050b,
+                roughness: 0.2,
+                metalness: 0.9,
+                side: THREE.DoubleSide
             });
+            const road = new THREE.Mesh(roadGeo, roadMat);
+            road.rotation.x = -Math.PI / 2;
+            road.position.y = -0.4;
+            road.receiveShadow = true;
+            scene.add(road);
+
+            // Road side lines
+            const lineGeoLeft = new THREE.BoxGeometry(0.5, 0.1, 1000);
+            const lineGeoRight = new THREE.BoxGeometry(0.5, 0.1, 1000);
+            const lineMatCyan = new THREE.MeshBasicMaterial({ color: 0x00fff2 });
+            const lineMatPink = new THREE.MeshBasicMaterial({ color: 0xff0080 });
+
+            const lineLeft = new THREE.Mesh(lineGeoLeft, lineMatCyan);
+            lineLeft.position.set(-30, -0.3, 0);
+            scene.add(lineLeft);
+
+            const lineRight = new THREE.Mesh(lineGeoRight, lineMatPink);
+            lineRight.position.set(30, -0.3, 0);
+            scene.add(lineRight);
+
+            // Tall Glowing Neon Cylinders along the borders
+            const cylinderGeo = new THREE.CylinderGeometry(1, 1, 60, 16);
+            
+            for (let i = -500; i <= 500; i += 80) {
+                if (i === 0) continue; // Skip center
+                
+                // Left Side (Cyan)
+                const cylLeft = new THREE.Mesh(
+                    cylinderGeo, 
+                    new THREE.MeshStandardMaterial({ 
+                        color: 0x00fff2, 
+                        emissive: 0x00fff2, 
+                        emissiveIntensity: 1.5,
+                        roughness: 0.1 
+                    })
+                );
+                cylLeft.position.set(-35, 30, i);
+                scene.add(cylLeft);
+
+                // Right Side (Pink)
+                const cylRight = new THREE.Mesh(
+                    cylinderGeo, 
+                    new THREE.MeshStandardMaterial({ 
+                        color: 0xff0080, 
+                        emissive: 0xff0080, 
+                        emissiveIntensity: 1.5,
+                        roughness: 0.1 
+                    })
+                );
+                cylRight.position.set(35, 30, i);
+                scene.add(cylRight);
+            }
+
+            // Set camera to frame the neon track perfectly
+            camera.position.set(0, 45, 120);
+            controls.target.set(0, 10, 0);
+            controls.update();
+
+            hideLoader();
         }
 
-        function showToast(msg) {
-            const toast = document.getElementById('stream-toast');
-            toast.innerText = msg;
-            toast.classList.add('show');
+        function hideLoader() {
+            loaderOverlay.style.opacity = '0';
+            loaderOverlay.style.visibility = 'hidden';
             setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
+                uiPanel.style.opacity = '1';
+            }, 500);
         }
 
-        // UI Trigger for Map Swap
-        function toggleMap() {
-            const t = TRANSLATIONS[currentLang];
-            const mapBtn = document.getElementById('btn-map');
-
-            if (activeMapType === 'procedural') {
-                // Swap to Map 1 (Lazy Loaded / Streamed)
-                activeMapType = 'map1';
-                mapBtn.innerText = t.map1;
-                
-                if (!map1Loaded) {
-                    streamMapAsset(ASSETS.map1, (mesh) => {
-                        map1Mesh = mesh;
-                        map1Loaded = true;
-                        activateStreamedMap(map1Mesh);
-                    });
-                } else {
-                    activateStreamedMap(map1Mesh);
-                }
-            } else if (activeMapType === 'map1') {
-                // Swap to Map 2 (Deferred Network Load)
-                activeMapType = 'map2';
-                mapBtn.innerText = t.map2;
-                
-                if (!map2Loaded) {
-                    showToast(t.loadingMap2);
-                    streamMapAsset(ASSETS.map2, (mesh) => {
-                        map2Mesh = mesh;
-                        map2Loaded = true;
-                        activateStreamedMap(map2Mesh);
-                    });
-                } else {
-                    activateStreamedMap(map2Mesh);
-                }
-            } else {
-                // Back to Procedural
-                activeMapType = 'procedural';
-                mapBtn.innerText = t.mapProcedural;
-                removeStreamedMaps();
-            }
-        }
-
-        function activateStreamedMap(newMapMesh) {
-            removeStreamedMaps();
-            
-            // Turn off neon procedural lines to avoid visual noise
-            proceduralTrack.visible = false;
-            
-            streamedMapMesh = newMapMesh;
-            scene.add(streamedMapMesh);
-
-            // Smooth Opacity Fade-in to eliminate pop-in frame drops
-            let opacity = 0;
-            const fadeInterval = setInterval(() => {
-                opacity += 0.05;
-                streamedMapMesh.traverse(child => {
-                    if (child.isMesh && child.material) {
-                        child.material.opacity = opacity;
-                    }
-                });
-                if (opacity >= 1) {
-                    clearInterval(fadeInterval);
-                    // Disable transparency flag for optimized rasterization rendering
-                    streamedMapMesh.traverse(child => {
-                        if (child.isMesh && child.material) {
-                            child.material.transparent = false;
-                        }
-                    });
-                }
-            }, 30);
-        }
-
-        function removeStreamedMaps() {
-            if (streamedMapMesh) {
-                scene.remove(streamedMapMesh);
-                streamedMapMesh = null;
-            }
-            proceduralTrack.visible = true;
-        }
-
-        // --- STUDIO LIGHT / DARK MODE SWITCH ---
-        function toggleTheme() {
-            const t = TRANSLATIONS[currentLang];
-            const themeBtn = document.getElementById('btn-theme');
-
-            if (currentTheme === 'dark') {
-                currentTheme = 'light';
-                themeBtn.innerText = t.light;
-                document.body.classList.add('light-mode');
-
-                // Studio Light Mode Physics Adjustments
-                renderer.setClearColor(0xf0f0f8);
-                scene.fog.color.setHex(0xf0f0f8);
-                scene.fog.density = 0.003;
-                ambientLight.intensity = 0.75;
-                dirLight.color.setHex(0xffffff);
-                dirLight.intensity = 1.2;
-            } else {
-                currentTheme = 'dark';
-                themeBtn.innerText = t.dark;
-                document.body.classList.remove('light-mode');
-
-                // Atmospheric Dark Cyberpunk Mode
-                renderer.setClearColor(0x0a0a12);
-                scene.fog.color.setHex(0x0a0a12);
-                scene.fog.density = 0.007;
-                ambientLight.intensity = 0.15;
-                dirLight.color.setHex(0x00f0ff);
-                dirLight.intensity = 1.5;
-            }
-        }
-
-        // --- WINDOW RESIZE OBSERVER ---
         function onWindowResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // --- START GAME PLAY TRIGGER ---
-        document.getElementById('btn-start').addEventListener('click', () => {
-            const loaderOverlay = document.getElementById('loader-overlay');
-            loaderOverlay.style.opacity = '0';
-            setTimeout(() => {
-                loaderOverlay.style.display = 'none';
-            }, 800);
+        function animate() {
+            requestAnimationFrame(animate);
 
-            // Lazy-load the primary map SILENTLY in the background post-start
-            setTimeout(() => {
-                if (!map1Loaded) {
-                    streamMapAsset(ASSETS.map1, (mesh) => {
-                        map1Mesh = mesh;
-                        map1Loaded = true;
-                        // Automatically swap to loaded high-fidelity map
-                        activeMapType = 'map1';
-                        updateUILanguage();
-                        activateStreamedMap(map1Mesh);
-                    });
-                }
-            }, 2000);
-        });
+            // Smoothly update controls
+            controls.update();
+
+            // Subtle rotation of fallback environment components if active
+            if (isFallbackActive) {
+                const time = Date.now() * 0.001;
+                // Add a subtle wave or hover effect to lighting if wanted
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Initialize application on load
+        window.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>

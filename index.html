@@ -2,23 +2,29 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>VULTURE RUN - Environment Inspector</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VULTURE RUN - Map Inspector (Track 2)</title>
     <style>
-        * {
-            box-sizing: border-box;
+        :root {
+            --primary: #00ffcc;
+            --primary-bg: rgba(12, 12, 20, 0.9);
+            --accent: #ff0055;
+            --text: #ffffff;
+            --panel-border: 1px solid rgba(0, 255, 204, 0.3);
+        }
+
+        body, html {
             margin: 0;
             padding: 0;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        body, html {
             width: 100%;
             height: 100%;
             overflow: hidden;
             background-color: #0c0c14;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Courier New', Courier, monospace;
+            color: var(--text);
+            user-select: none;
         }
+
         #canvas-container {
             width: 100%;
             height: 100%;
@@ -27,432 +33,652 @@
             left: 0;
             z-index: 1;
         }
-        /* Loading Overlay with Blurred Background Image */
-        #loader-overlay {
+
+        /* Loading Screen */
+        #loader-container {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            transition: opacity 1s ease-in-out, visibility 1s;
-            background-color: #0c0c14;
-        }
-        #loader-bg {
-            position: absolute;
-            top: -20px;
-            left: -20px;
-            width: calc(100% + 40px);
-            height: calc(100% + 40px);
             background-image: url('Gemini_Generated_Image_qad2wkqad2wkqad2.png');
             background-size: cover;
             background-position: center;
-            filter: blur(15px) brightness(0.4);
-            z-index: 1;
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.8s ease-in-out;
         }
-        #loader-content {
-            position: relative;
-            z-index: 2;
-            text-align: center;
-            color: #ffffff;
-            padding: 20px;
-        }
-        h1 {
-            font-size: 3rem;
-            letter-spacing: 8px;
-            text-transform: uppercase;
-            margin-bottom: 10px;
-            text-shadow: 0 0 20px rgba(0, 255, 242, 0.6);
-            font-weight: 900;
-            animation: pulse 2s infinite alternate;
-        }
-        p {
-            font-size: 1rem;
-            letter-spacing: 3px;
-            color: #8a99ad;
-            margin-bottom: 30px;
-            text-transform: uppercase;
-        }
-        .spinner-container {
-            position: relative;
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 20px auto;
-        }
-        .spinner {
+
+        #loader-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            border: 4px solid rgba(0, 255, 242, 0.1);
-            border-top-color: #00fff2;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+            background: radial-gradient(circle, rgba(12, 12, 20, 0.75) 0%, rgba(12, 12, 20, 0.95) 100%);
+            z-index: 101;
         }
-        .spinner-inner {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            width: 60px;
-            height: 60px;
-            border: 4px solid rgba(255, 0, 128, 0.1);
-            border-bottom-color: #ff0080;
-            border-radius: 50%;
-            animation: spin-reverse 1.5s linear infinite;
+
+        #loader-content {
+            position: relative;
+            z-index: 102;
+            text-align: center;
+            width: 90%;
+            max-width: 600px;
+            padding: 40px;
+            background: var(--primary-bg);
+            border: var(--panel-border);
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.2);
+            border-radius: 8px;
         }
-        #status-text {
-            font-family: monospace;
+
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 2rem;
+            letter-spacing: 4px;
+            color: var(--primary);
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+        }
+
+        .subtitle {
             font-size: 0.9rem;
-            color: #00fff2;
-            text-shadow: 0 0 10px rgba(0, 255, 242, 0.4);
-        }
-        /* UI Overlay for controls info */
-        #ui-panel {
-            position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 5;
-            background: rgba(12, 12, 20, 0.85);
-            border: 1px solid rgba(0, 255, 242, 0.2);
-            padding: 15px 30px;
-            border-radius: 30px;
-            color: #ffffff;
-            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 30px;
             letter-spacing: 2px;
-            text-transform: uppercase;
-            pointer-events: none;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 15px rgba(0, 255, 242, 0.1);
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            transition: opacity 0.5s ease;
-            opacity: 0;
         }
-        .ui-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+
+        #progress-bar-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            border: 1px solid rgba(0, 255, 204, 0.2);
         }
-        .ui-icon {
-            width: 8px;
-            height: 8px;
-            background-color: #ff0080;
-            border-radius: 50%;
-            box-shadow: 0 0 8px #ff0080;
+
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), #0088ff);
+            box-shadow: 0 0 8px var(--primary);
+            transition: width 0.1s ease-out;
         }
-        .ui-icon.cyan {
-            background-color: #00fff2;
-            box-shadow: 0 0 8px #00fff2;
+
+        #status-text {
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            color: #aaa;
+            min-height: 20px;
         }
-        #fallback-badge {
+
+        #error-container {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 0, 85, 0.15);
+            border: 1px solid var(--accent);
+            color: #ff4477;
+            font-size: 0.85rem;
+            text-align: left;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        /* UI Overlays */
+        .hud-panel {
             position: absolute;
+            z-index: 10;
+            background: var(--primary-bg);
+            border: var(--panel-border);
+            padding: 15px;
+            border-radius: 4px;
+            pointer-events: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        #hud-header {
+            top: 20px;
+            left: 20px;
+            width: 320px;
+        }
+
+        #hud-header h2 {
+            margin: 0 0 5px 0;
+            font-size: 1.2rem;
+            color: var(--primary);
+            letter-spacing: 1px;
+        }
+
+        #hud-header p {
+            margin: 0;
+            font-size: 0.75rem;
+            color: #8af;
+        }
+
+        #hud-stats {
+            bottom: 20px;
+            left: 20px;
+            width: 320px;
+            font-size: 0.8rem;
+        }
+
+        .stat-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            border-bottom: 1px dashed rgba(255,255,255,0.1);
+            padding-bottom: 4px;
+        }
+
+        .stat-line:last-child {
+            margin-bottom: 0;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .stat-label {
+            color: #888;
+        }
+
+        .stat-value {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        #hud-controls {
             top: 20px;
             right: 20px;
-            z-index: 5;
-            background: rgba(255, 0, 80, 0.2);
-            border: 1px solid #ff0050;
-            color: #ff0050;
-            padding: 8px 15px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            letter-spacing: 2px;
+            width: 260px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-group-title {
+            font-size: 0.75rem;
+            color: var(--primary);
             text-transform: uppercase;
-            border-radius: 4px;
-            display: none;
-            box-shadow: 0 0 15px rgba(255, 0, 80, 0.3);
-            animation: blink 2s infinite;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+            border-left: 2px solid var(--primary);
+            padding-left: 6px;
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+
+        .btn {
+            background: rgba(0, 255, 204, 0.1);
+            border: 1px solid rgba(0, 255, 204, 0.4);
+            color: var(--primary);
+            padding: 8px 12px;
+            width: 100%;
+            text-align: center;
+            font-family: inherit;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 6px;
+            border-radius: 2px;
         }
-        @keyframes spin-reverse {
-            to { transform: rotate(-360deg); }
+
+        .btn:hover {
+            background: var(--primary);
+            color: #000;
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
         }
-        @keyframes pulse {
-            from { transform: scale(0.98); text-shadow: 0 0 15px rgba(0, 255, 242, 0.5); }
-            to { transform: scale(1.02); text-shadow: 0 0 30px rgba(0, 255, 242, 0.8), 0 0 10px rgba(255, 0, 128, 0.6); }
+
+        .btn.active {
+            background: var(--primary);
+            color: #000;
+            font-weight: bold;
         }
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+
+        /* Navigation Instructions */
+        #hud-instructions {
+            bottom: 20px;
+            right: 20px;
+            width: 260px;
+            font-size: 0.75rem;
+            color: #aaa;
+            line-height: 1.4;
+        }
+
+        .instruction-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .key-cap {
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 3px;
+            padding: 2px 6px;
+            margin-right: 8px;
+            font-size: 0.7rem;
+            color: #fff;
+            min-width: 50px;
+            text-align: center;
+            box-shadow: 0 2px 0 #111;
+        }
+
+        /* Utilities */
+        .hide {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hud-panel {
+                width: calc(100% - 40px) !important;
+                left: 20px !important;
+                right: auto !important;
+            }
+            #hud-header { top: 10px; }
+            #hud-controls { top: 100px; }
+            #hud-stats { bottom: auto; top: 310px; }
+            #hud-instructions { display: none; }
         }
     </style>
 </head>
 <body>
 
-    <div id="loader-overlay">
-        <div id="loader-bg"></div>
+    <!-- Loading Screen Overlay -->
+    <div id="loader-container">
+        <div id="loader-overlay"></div>
         <div id="loader-content">
             <h1>VULTURE RUN</h1>
-            <p>Environment Compiler Phase</p>
-            <div class="spinner-container">
-                <div class="spinner"></div>
-                <div class="spinner-inner"></div>
+            <div class="subtitle">ENVIRONMENT TEST HARNESS // TRACK 2</div>
+            
+            <div id="progress-bar-container">
+                <div id="progress-bar"></div>
             </div>
-            <div id="status-text">Initializing Engine...</div>
+            <div id="status-text">INITIALIZING GRAPHICS ENGINE...</div>
+
+            <div id="error-container">
+                <strong>[FATAL ERROR]</strong><br>
+                <div id="error-text"></div>
+            </div>
         </div>
     </div>
 
-    <div id="fallback-badge">Fallback Grid Active</div>
-
-    <div id="ui-panel">
-        <div class="ui-item"><span class="ui-icon"></span>Drag to Rotate</div>
-        <div class="ui-item"><span class="ui-icon cyan"></span>Scroll to Zoom</div>
-        <div class="ui-item"><span class="ui-icon"></span>Right-Click to Pan</div>
-    </div>
-
+    <!-- 3D Viewport -->
     <div id="canvas-container"></div>
 
-    <!-- Include Three.js and dependencies -->
+    <!-- Interactive HUD Panels -->
+    <div id="hud-header" class="hud-panel">
+        <h2>MAP INSPECTOR</h2>
+        <p>Asset: farmland_and_terraced_fields_beside_the_highway.glb</p>
+    </div>
+
+    <div id="hud-controls" class="hud-panel">
+        <div class="control-group">
+            <div class="control-group-title">Camera Mode</div>
+            <button class="btn active" id="btn-orbit" onclick="setOrbitMode(true)">Auto-Orbit ON</button>
+            <button class="btn" id="btn-reset" onclick="resetCamera()">Reset Camera</button>
+        </div>
+        <div class="control-group">
+            <div class="control-group-title">Visual Modes</div>
+            <button class="btn" id="btn-wireframe" onclick="toggleWireframe()">Toggle Wireframe</button>
+            <button class="btn" id="btn-lighting" onclick="cycleLighting()">Cycle Lighting (Day)</button>
+        </div>
+    </div>
+
+    <div id="hud-stats" class="hud-panel">
+        <div class="control-group-title">Terrain Metrics</div>
+        <div class="stat-line">
+            <span class="stat-label">Geometry Status:</span>
+            <span class="stat-value" id="stat-status" style="color: #ff0055;">LOADING...</span>
+        </div>
+        <div class="stat-line">
+            <span class="stat-label">Total Vertices:</span>
+            <span class="stat-value" id="stat-vertices">-</span>
+        </div>
+        <div class="stat-line">
+            <span class="stat-label">Total Triangles:</span>
+            <span class="stat-value" id="stat-triangles">-</span>
+        </div>
+        <div class="stat-line">
+            <span class="stat-label">Bounding Width:</span>
+            <span class="stat-value" id="stat-width">-</span>
+        </div>
+        <div class="stat-line">
+            <span class="stat-label">Bounding Length:</span>
+            <span class="stat-value" id="stat-length">-</span>
+        </div>
+        <div class="stat-line">
+            <span class="stat-label">Height Range:</span>
+            <span class="stat-value" id="stat-height">-</span>
+        </div>
+    </div>
+
+    <div id="hud-instructions" class="hud-panel">
+        <div class="control-group-title">Navigation</div>
+        <div class="instruction-item">
+            <span class="key-cap">L-CLICK</span> Rotate Viewport
+        </div>
+        <div class="instruction-item">
+            <span class="key-cap">R-CLICK</span> Pan Camera
+        </div>
+        <div class="instruction-item">
+            <span class="key-cap">SCROLL</span> Zoom In / Out
+        </div>
+    </div>
+
+    <!-- Three.js and Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
     <script>
-        // --- Application Architecture & Pipeline ---
+        // Global App Variables
         let scene, camera, renderer, controls;
-        let mainModel = null;
-        let isFallbackActive = false;
+        let terrainModel = null;
+        let autoOrbit = true;
+        let lightingMode = 0; // 0: Day, 1: Sunset, 2: Night Inspection
+        let dirLight, dirLightFill, hemiLight, ambientLight;
         
-        const container = document.getElementById('canvas-container');
-        const loaderOverlay = document.getElementById('loader-overlay');
+        const loaderContainer = document.getElementById('loader-container');
+        const progressBar = document.getElementById('progress-bar');
         const statusText = document.getElementById('status-text');
-        const uiPanel = document.getElementById('ui-panel');
-        const fallbackBadge = document.getElementById('fallback-badge');
+        const errorContainer = document.getElementById('error-container');
+        const errorText = document.getElementById('error-text');
 
+        // Initialize Application
         function init() {
-            // 1. Scene Setup
+            try {
+                setupScene();
+                setupLighting();
+                setupControls();
+                setupEventListeners();
+                loadTerrain();
+                animate();
+            } catch (err) {
+                showError("Initialization Failure: " + err.message);
+            }
+        }
+
+        // Scene Setup
+        function setupScene() {
+            const container = document.getElementById('canvas-container');
+            
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x0c0c14);
-            scene.fog = new THREE.FogExp2(0x0c0c14, 0.002);
+            scene.fog = new THREE.FogExp2(0x0c0c14, 0.0015);
 
-            // 2. Camera Setup
-            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
-            camera.position.set(0, 50, 100);
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 10000);
+            camera.position.set(300, 200, 300);
 
-            // 3. Renderer Setup
-            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
             renderer.toneMappingExposure = 1.2;
+            
             container.appendChild(renderer.domElement);
+        }
 
-            // 4. Orbit Controls
+        // Comprehensive Lighting Configuration
+        function setupLighting() {
+            // Ambient light: high-intensity to expose intrinsic details/textures
+            ambientLight = new THREE.AmbientLight(0xffffff, 1.8);
+            scene.add(ambientLight);
+
+            // Hemisphere light for natural sky/ground bounce
+            hemiLight = new THREE.HemisphereLight(0xffffff, 0x444455, 1.0);
+            hemiLight.position.set(0, 500, 0);
+            scene.add(hemiLight);
+
+            // Sun Light (Directional)
+            dirLight = new THREE.DirectionalLight(0xfffaed, 2.5);
+            dirLight.position.set(300, 400, 200);
+            dirLight.castShadow = true;
+            dirLight.shadow.camera.top = 600;
+            dirLight.shadow.camera.bottom = -600;
+            dirLight.shadow.camera.left = -600;
+            dirLight.shadow.camera.right = 600;
+            dirLight.shadow.camera.near = 0.1;
+            dirLight.shadow.camera.far = 1500;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            dirLight.shadow.bias = -0.0005;
+            scene.add(dirLight);
+
+            // Fill Light (Directional, cool tone, opposite side)
+            dirLightFill = new THREE.DirectionalLight(0x88baff, 1.2);
+            dirLightFill.position.set(-300, 250, -200);
+            scene.add(dirLightFill);
+        }
+
+        // Camera Controls Setup
+        function setupControls() {
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
             controls.screenSpacePanning = true;
-            controls.maxPolarAngle = Math.PI / 2 - 0.02; // Don't go below ground
-            controls.minDistance = 2;
-            controls.maxDistance = 800;
-
-            // 5. Lighting Setup
-            setupLighting();
-
-            // 6. Handle Resize
-            window.addEventListener('resize', onWindowResize);
-
-            // 7. Load Asset
-            loadEnvironment();
-
-            // 8. Start Loop
-            animate();
+            controls.maxPolarAngle = Math.PI / 2 - 0.05; // Prevent camera going below ground
+            controls.minDistance = 10;
+            controls.maxDistance = 2000;
         }
 
-        function setupLighting() {
-            // Ambient Light: High intensity to bring out dark textures and photogrammetry details
-            const ambientLight = new THREE.AmbientLight(0xffffff, 1.8);
-            scene.add(ambientLight);
-
-            // Hemisphere Light for sky/ground gradients
-            const hemiLight = new THREE.HemisphereLight(0x3a4f7c, 0x121224, 1.0);
-            scene.add(hemiLight);
-
-            // Directional Light 1: Primary Key Light
-            const dirLight1 = new THREE.DirectionalLight(0x00fff2, 2.5);
-            dirLight1.position.set(150, 200, 100);
-            dirLight1.castShadow = true;
-            dirLight1.shadow.mapSize.width = 2048;
-            dirLight1.shadow.mapSize.height = 2048;
-            dirLight1.shadow.camera.near = 0.5;
-            dirLight1.shadow.camera.far = 1000;
-            const d = 300;
-            dirLight1.shadow.camera.left = -d;
-            dirLight1.shadow.camera.right = d;
-            dirLight1.shadow.camera.top = d;
-            dirLight1.shadow.camera.bottom = -d;
-            scene.add(dirLight1);
-
-            // Directional Light 2: Opposing Fill Light
-            const dirLight2 = new THREE.DirectionalLight(0xff0080, 2.0);
-            dirLight2.position.set(-150, 150, -100);
-            dirLight2.castShadow = true;
-            scene.add(dirLight2);
-
-            // Subtle neon point lights to add atmosphere
-            const colors = [0x00fff2, 0xff0080, 0x00ff66];
-            for(let i=0; i<3; i++) {
-                const pl = new THREE.PointLight(colors[i], 3, 100);
-                pl.position.set((i-1)*100, 20, (i-1)*50);
-                scene.add(pl);
-            }
-        }
-
-        function loadEnvironment() {
-            statusText.textContent = "Loading highway_lnterchange_overpass.glb...";
+        // Exclusive Asset Loading
+        function loadTerrain() {
             const loader = new THREE.GLTFLoader();
+            statusText.textContent = "LOCATING TERRAIN ASSET...";
+            progressBar.style.width = "10%";
+
+            const assetPath = 'farmland_and_terraced_fields_beside_the_highway.glb';
 
             loader.load(
-                'highway_lnterchange_overpass.glb',
+                assetPath,
                 // Success Callback
                 function (gltf) {
-                    mainModel = gltf.scene;
+                    terrainModel = gltf.scene;
                     
-                    // Optimize and enable shadows for loaded model
-                    mainModel.traverse((child) => {
+                    statusText.textContent = "OPTIMIZING GEOMETRY & SHADERS...";
+                    progressBar.style.width = "90%";
+
+                    // Traverse, optimize, and compute statistics
+                    let vertexCount = 0;
+                    let triangleCount = 0;
+
+                    terrainModel.traverse((child) => {
                         if (child.isMesh) {
                             child.castShadow = true;
                             child.receiveShadow = true;
                             
-                            // Enhance materials if they exist
-                            if(child.material) {
-                                child.material.roughness = Math.max(child.material.roughness, 0.4);
-                                child.material.metalness = Math.min(child.material.metalness, 0.8);
+                            // High quality material configurations for photogrammetry
+                            if (child.material) {
+                                child.material.roughness = 0.85;
+                                child.material.metalness = 0.1;
+                                child.material.side = THREE.DoubleSide; // Avoid holes
+                            }
+
+                            if (child.geometry) {
+                                vertexCount += child.geometry.attributes.position.count;
+                                if (child.geometry.index) {
+                                    triangleCount += child.geometry.index.count / 3;
+                                } else {
+                                    triangleCount += child.geometry.attributes.position.count / 3;
+                                }
                             }
                         }
                     });
 
-                    scene.add(mainModel);
+                    scene.add(terrainModel);
+
+                    // Compute Bounding Box for Centering & Focus
+                    const box = new THREE.Box3().setFromObject(terrainModel);
+                    const center = box.getCenter(new THREE.Vector3());
+                    const size = box.getSize(new THREE.Vector3());
+
+                    // Center OrbitControls target on model bounding center
+                    controls.target.copy(center);
                     
-                    // Frame the model perfectly in viewport
-                    focusCameraOnModel(mainModel);
+                    // Position camera systematically based on model dimensions
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    camera.position.set(
+                        center.x + size.x * 0.9,
+                        center.y + size.y + (maxDim * 0.5),
+                        center.z + size.z * 0.9
+                    );
+                    controls.update();
+
+                    // Display Terrain Metrics on HUD
+                    document.getElementById('stat-status').textContent = "LOADED";
+                    document.getElementById('stat-status').style.color = "#00ffcc";
+                    document.getElementById('stat-vertices').textContent = vertexCount.toLocaleString();
+                    document.getElementById('stat-triangles').textContent = Math.round(triangleCount).toLocaleString();
+                    document.getElementById('stat-width').textContent = Math.round(size.x) + "m";
+                    document.getElementById('stat-length').textContent = Math.round(size.z) + "m";
+                    document.getElementById('stat-height').textContent = Math.round(size.y) + "m";
+
+                    // Smooth transition to screen
+                    progressBar.style.width = "100%";
+                    statusText.textContent = "READY";
                     
-                    hideLoader();
+                    setTimeout(() => {
+                        loaderContainer.classList.add('hide');
+                    }, 500);
                 },
                 // Progress Callback
                 function (xhr) {
                     if (xhr.total > 0) {
-                        const percent = Math.round((xhr.loaded / xhr.total) * 100);
-                        statusText.textContent = `Downloading environment: ${percent}%`;
+                        const percent = (xhr.loaded / xhr.total) * 80 + 10; // offset scale to preserve 10%-90% stage
+                        progressBar.style.width = percent + '%';
+                        statusText.textContent = `DOWNLOADING MODEL DATA: ${Math.round(xhr.loaded / 1024 / 1024 * 10) / 10}MB / ${Math.round(xhr.total / 1024 / 1024 * 10) / 10}MB`;
+                    } else {
+                        // Fallback if content-length is missing
+                        statusText.textContent = `DOWNLOADING MODEL DATA: ${Math.round(xhr.loaded / 1024 / 1024 * 10) / 10}MB loaded...`;
                     }
                 },
                 // Error Callback
                 function (error) {
-                    console.warn("Primary GLTF asset failed to load. Initializing beautiful fallback cyber-grid...", error);
-                    statusText.textContent = "Error loading primary asset. Initializing Cyber-Grid fallback...";
-                    setTimeout(activateFallbackEnvironment, 1000);
+                    console.error("GLTF Loading Error Details:", error);
+                    showError(`Failed to load: "${assetPath}". Ensure file exists in root directory.`);
                 }
             );
         }
 
-        function focusCameraOnModel(model) {
-            const box = new THREE.Box3().setFromObject(model);
+        // Error Feedback Panel
+        function showError(msg) {
+            progressBar.style.backgroundColor = "var(--accent)";
+            progressBar.style.width = "100%";
+            statusText.textContent = "LOAD FAILURE";
+            statusText.style.color = "var(--accent)";
+            errorText.innerHTML = msg + "<br><br>Please verify the asset path and reload the page.";
+            errorContainer.style.display = 'block';
+        }
+
+        // Interactive Controls Functions
+        function setOrbitMode(active) {
+            autoOrbit = active;
+            const btn = document.getElementById('btn-orbit');
+            if (autoOrbit) {
+                btn.classList.add('active');
+                btn.textContent = "Auto-Orbit ON";
+            } else {
+                btn.classList.remove('active');
+                btn.textContent = "Auto-Orbit OFF";
+            }
+        }
+
+        function resetCamera() {
+            if (!terrainModel) return;
+            const box = new THREE.Box3().setFromObject(terrainModel);
             const center = box.getCenter(new THREE.Vector3());
             const size = box.getSize(new THREE.Vector3());
-            
             const maxDim = Math.max(size.x, size.y, size.z);
-            const fov = camera.fov * (Math.PI / 180);
-            let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
-            
-            // Offset camera slightly for dynamic view
-            camera.position.set(center.x + maxDim * 0.7, center.y + maxDim * 0.4, center.z + maxDim * 0.7);
-            camera.lookAt(center);
             
             controls.target.copy(center);
-            controls.maxDistance = maxDim * 4;
+            camera.position.set(
+                center.x + size.x * 0.9,
+                center.y + size.y + (maxDim * 0.5),
+                center.z + size.z * 0.9
+            );
             controls.update();
         }
 
-        function activateFallbackEnvironment() {
-            isFallbackActive = true;
-            fallbackBadge.style.display = "block";
-
-            // Create Infinite Neon Cyber-Grid
-            const gridHelper = new THREE.GridHelper(1000, 100, 0xff0080, 0x00fff2);
-            gridHelper.position.y = -0.5;
-            scene.add(gridHelper);
-
-            // Create a custom glowing road bed
-            const roadGeo = new THREE.PlaneGeometry(60, 1000);
-            const roadMat = new THREE.MeshStandardMaterial({
-                color: 0x05050b,
-                roughness: 0.2,
-                metalness: 0.9,
-                side: THREE.DoubleSide
-            });
-            const road = new THREE.Mesh(roadGeo, roadMat);
-            road.rotation.x = -Math.PI / 2;
-            road.position.y = -0.4;
-            road.receiveShadow = true;
-            scene.add(road);
-
-            // Road side lines
-            const lineGeoLeft = new THREE.BoxGeometry(0.5, 0.1, 1000);
-            const lineGeoRight = new THREE.BoxGeometry(0.5, 0.1, 1000);
-            const lineMatCyan = new THREE.MeshBasicMaterial({ color: 0x00fff2 });
-            const lineMatPink = new THREE.MeshBasicMaterial({ color: 0xff0080 });
-
-            const lineLeft = new THREE.Mesh(lineGeoLeft, lineMatCyan);
-            lineLeft.position.set(-30, -0.3, 0);
-            scene.add(lineLeft);
-
-            const lineRight = new THREE.Mesh(lineGeoRight, lineMatPink);
-            lineRight.position.set(30, -0.3, 0);
-            scene.add(lineRight);
-
-            // Tall Glowing Neon Cylinders along the borders
-            const cylinderGeo = new THREE.CylinderGeometry(1, 1, 60, 16);
+        function toggleWireframe() {
+            if (!terrainModel) return;
+            const btn = document.getElementById('btn-wireframe');
+            let isWireframe = false;
             
-            for (let i = -500; i <= 500; i += 80) {
-                if (i === 0) continue; // Skip center
-                
-                // Left Side (Cyan)
-                const cylLeft = new THREE.Mesh(
-                    cylinderGeo, 
-                    new THREE.MeshStandardMaterial({ 
-                        color: 0x00fff2, 
-                        emissive: 0x00fff2, 
-                        emissiveIntensity: 1.5,
-                        roughness: 0.1 
-                    })
-                );
-                cylLeft.position.set(-35, 30, i);
-                scene.add(cylLeft);
+            terrainModel.traverse((child) => {
+                if (child.isMesh && child.material) {
+                    child.material.wireframe = !child.material.wireframe;
+                    isWireframe = child.material.wireframe;
+                }
+            });
 
-                // Right Side (Pink)
-                const cylRight = new THREE.Mesh(
-                    cylinderGeo, 
-                    new THREE.MeshStandardMaterial({ 
-                        color: 0xff0080, 
-                        emissive: 0xff0080, 
-                        emissiveIntensity: 1.5,
-                        roughness: 0.1 
-                    })
-                );
-                cylRight.position.set(35, 30, i);
-                scene.add(cylRight);
+            if (isWireframe) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
             }
-
-            // Set camera to frame the neon track perfectly
-            camera.position.set(0, 45, 120);
-            controls.target.set(0, 10, 0);
-            controls.update();
-
-            hideLoader();
         }
 
-        function hideLoader() {
-            loaderOverlay.style.opacity = '0';
-            loaderOverlay.style.visibility = 'hidden';
-            setTimeout(() => {
-                uiPanel.style.opacity = '1';
-            }, 500);
+        function cycleLighting() {
+            lightingMode = (lightingMode + 1) % 3;
+            const btn = document.getElementById('btn-lighting');
+
+            if (lightingMode === 0) {
+                // Day Mode
+                btn.textContent = "Cycle Lighting (Day)";
+                renderer.toneMappingExposure = 1.2;
+                scene.background.setHex(0x0c0c14);
+                scene.fog.color.setHex(0x0c0c14);
+                ambientLight.intensity = 1.8;
+                hemiLight.intensity = 1.0;
+                dirLight.intensity = 2.5;
+                dirLight.color.setHex(0xfffaed);
+                dirLightFill.intensity = 1.2;
+            } else if (lightingMode === 1) {
+                // Sunset Mode
+                btn.textContent = "Cycle Lighting (Sunset)";
+                renderer.toneMappingExposure = 1.0;
+                scene.background.setHex(0x1a0f1a);
+                scene.fog.color.setHex(0x1a0f1a);
+                ambientLight.intensity = 0.8;
+                hemiLight.intensity = 0.6;
+                dirLight.intensity = 3.5;
+                dirLight.color.setHex(0xff5500); // deep orange
+                dirLightFill.intensity = 0.8;
+                dirLightFill.color.setHex(0x002266);
+            } else {
+                // High Contrast / Inspection Mode
+                btn.textContent = "Cycle Lighting (Inspect)";
+                renderer.toneMappingExposure = 1.5;
+                scene.background.setHex(0x020205);
+                scene.fog.color.setHex(0x020205);
+                ambientLight.intensity = 3.0; // fully reveal diffuse
+                hemiLight.intensity = 0.0;
+                dirLight.intensity = 0.0; // no strong shadows
+                dirLightFill.intensity = 0.0;
+            }
+        }
+
+        // Event Listeners
+        function setupEventListeners() {
+            window.addEventListener('resize', onWindowResize);
+            
+            // Disable auto-orbit if user interacts manually
+            const canvas = renderer.domElement;
+            canvas.addEventListener('pointerdown', () => {
+                if (autoOrbit) setOrbitMode(false);
+            });
+            canvas.addEventListener('wheel', () => {
+                if (autoOrbit) setOrbitMode(false);
+            });
         }
 
         function onWindowResize() {
@@ -461,23 +687,28 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
+        // Main Animation Loop
         function animate() {
             requestAnimationFrame(animate);
 
-            // Smoothly update controls
-            controls.update();
-
-            // Subtle rotation of fallback environment components if active
-            if (isFallbackActive) {
-                const time = Date.now() * 0.001;
-                // Add a subtle wave or hover effect to lighting if wanted
+            if (autoOrbit && terrainModel) {
+                const elapsed = Date.now() * 0.00015;
+                const box = new THREE.Box3().setFromObject(terrainModel);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+                const radius = Math.max(size.x, size.z) * 0.9;
+                
+                camera.position.x = center.x + Math.sin(elapsed) * radius;
+                camera.position.z = center.z + Math.cos(elapsed) * radius;
+                camera.position.y = center.y + size.y + (Math.sin(elapsed * 0.5) * size.y * 0.3) + 100;
             }
 
+            controls.update();
             renderer.render(scene, camera);
         }
 
-        // Initialize application on load
-        window.addEventListener('DOMContentLoaded', init);
+        // Run Application
+        window.onload = init;
     </script>
 </body>
 </html>
